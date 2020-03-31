@@ -55,6 +55,9 @@ import org.apache.ibatis.type.TypeHandler;
  */
 public class XMLMapperBuilder extends BaseBuilder {
 
+  /**
+   * 基于 Java XPath 解析器
+   */
   private final XPathParser parser;
   private final MapperBuilderAssistant builderAssistant;
   private final Map<String, XNode> sqlFragments;
@@ -91,14 +94,21 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   public void parse() {
+    // 判断是否已经加载
     if (!configuration.isResourceLoaded(resource)) {
+      // 解析mapper下面的节点
       configurationElement(parser.evalNode("/mapper"));
+      // 加载mapper资源，避免多次加载
       configuration.addLoadedResource(resource);
+      // 绑定mapper文件，通过namespace
       bindMapperForNamespace();
     }
 
+    // 解析resultMap
     parsePendingResultMaps();
+    // 解析cacheRef
     parsePendingCacheRefs();
+    // 解析语句
     parsePendingStatements();
   }
 
@@ -115,9 +125,13 @@ public class XMLMapperBuilder extends BaseBuilder {
       builderAssistant.setCurrentNamespace(namespace);
       cacheRefElement(context.evalNode("cache-ref"));
       cacheElement(context.evalNode("cache"));
+      //构建parameterMap节点，通过id作为唯一标示
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      //构建resultMap节点，通过id作为唯一标示
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      //构建sql节点，通过id作为唯一标示
       sqlElement(context.evalNodes("/mapper/sql"));
+      //构建操作数据库的select、insert、update、delete节点，通过id作为唯一标示
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -132,9 +146,12 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
+    // 循环解析节点数据
     for (XNode context : list) {
+      // statementParser 解析器
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
       try {
+        // 解析节点
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
         configuration.addIncompleteStatement(statementParser);

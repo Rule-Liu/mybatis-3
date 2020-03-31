@@ -321,6 +321,7 @@ public class XNode {
   }
 
   public Properties getChildrenAsProperties() {
+    // 根据name：username， value：sa这种格式存储到Properties中
     Properties properties = new Properties();
     for (XNode child : getChildren()) {
       String name = child.getStringAttribute("name");
